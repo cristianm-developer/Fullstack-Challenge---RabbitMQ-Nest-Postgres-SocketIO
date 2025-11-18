@@ -1,0 +1,1 @@
+export const RMQ_HEALTH_OPTIONS = 'RMQ_HEALTH_OPTIONS';

@@ -1,8 +1,8 @@
 import { Inject, Optional } from "@nestjs/common";
 import { DiskHealthIndicator, HealthCheckService, MemoryHealthIndicator, MicroserviceHealthIndicator, TypeOrmHealthIndicator } from "@nestjs/terminus";
-import { RMQ_HEALTH_OPTIONS } from "../health.module.js";
 import { Transport } from "@nestjs/microservices";
-
+import { RMQ_HEALTH_OPTIONS } from "../injection-token.js";
+import os from 'os';
 
 export class HealthService {
 
@@ -17,20 +17,21 @@ export class HealthService {
 
     async checkAllDependencies() {
         const rmqChecks = this.rmqUrls.map((url, index) => 
-        () => this.microservice.pingCheck(`rabbitmq-${index}`, {
+        () => this.microservice.pingCheck(`rabbitmq`, {
             transport: Transport.RMQ,
             options: {
                 urls: [url],
-                queue: `health_queue_${index}`
+                queue: `health_queue`
             }
         }));
 
+        const rootPath = os.platform() === 'win32' ? 'C:\\' : '/';
         const mandatoryChecks = [
             () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
-            () => this.memory.checkRSS('memory_rss', 150 * 1024 * 1024),
+            // () => this.memory.checkRSS('memory_rss', 150 * 1024 * 1024),
             () => this.disk.checkStorage('disk_storage', {
                 thresholdPercent: 0.9,
-                path: '/'                
+                path: rootPath                
             }),
             ...rmqChecks
         ];

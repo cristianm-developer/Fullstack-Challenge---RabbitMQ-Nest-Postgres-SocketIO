@@ -5,10 +5,10 @@ import { LoggerModule } from "pino-nestjs";
 
 @Global()
 @Module({})
-export class MicroserviceLogginModule {
+export class MicroserviceLoggingModule {
     static forRoot(serviceName: string) {
         return {
-            module: MicroserviceLogginModule,
+            module: MicroserviceLoggingModule,
             imports: [
                 LoggerModule.forRoot({
                     pinoHttp: {

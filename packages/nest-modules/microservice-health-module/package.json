@@ -6,32 +6,34 @@
   "types": "index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "default": "./dist/esm/index.js",
+      "types": "./dist/types/index.d.ts"
     }
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "build": "rimraf dist && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "peerDependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
+    "rimraf": "^6.1.0",
     "typescript": "^5.7.3"
   },
   "dependencies": {
-    "@repo/types": "*",
     "@nestjs/microservices": "^11.1.9",
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/typeorm": "^11.0.0",
+    "@repo/types": "*",
+    "check-disk-space": "^3.4.0",
     "pg": "^8.16.3",
     "typeorm": "^0.3.27"
   }

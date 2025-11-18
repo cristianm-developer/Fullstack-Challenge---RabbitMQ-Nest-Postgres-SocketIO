@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "./dist/cjs",
+    "moduleResolution": "node",
+    "target": "es2022",
+    "declaration": true,
+    "declarationDir": "./dist/types",
+    "esModuleInterop": true
+  },
+}

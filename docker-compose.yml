@@ -50,7 +50,7 @@ services:
     container_name: auth-service
     env_file:
       - .env.example
-    restart: always
+    restart: on-failure
     environment:
       - PORT=${HTTP_PORT}
       - POSTGRES_DB=${POSTGRES_DB_AUTH_DB}

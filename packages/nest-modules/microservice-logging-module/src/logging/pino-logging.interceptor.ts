@@ -8,11 +8,12 @@ import {
 } from "@nestjs/common";
 import { PINO_SERVICE_NAME } from "../consts/service-name.js";
 import { catchError, delay, tap } from "rxjs";
+import { InjectPinoLogger } from "pino-nestjs";
 
 @Injectable()
 export class PinoLoggingInterceptor implements NestInterceptor {
   constructor(
-    private readonly logger: Logger,
+    @InjectPinoLogger() private readonly logger: Logger,
     @Inject(PINO_SERVICE_NAME) private readonly serviceName: string
   ) {}
 

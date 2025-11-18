@@ -1,5 +1,5 @@
 {
-  "name": "auth-service",
+  "name": "@repo/auth-service",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -12,17 +12,21 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",    
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "migration:create": "npx typeorm migration:create ./src/migrations/migration-",
+    "migration:generate": "npx --node-options \"-r ts-node/register -r dotenv/config\" typeorm migration:generate ./src/migrations/migration -d ./src/data-source.ts",
+    "migration:run": "npx --node-options \"-r ts-node/register -r dotenv/config\" typeorm migration:run -d ./src/data-source.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.1",
     "@nestjs/microservices": "^11.1.9",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.0",
@@ -31,6 +35,8 @@
     "@repo/types": "*",
     "amqp-connection-manager": "^5.0.0",
     "amqplib": "^0.10.9",
+    "argon2": "^0.44.0",
+    "dotenv": "^16.0.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -57,24 +63,41 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "typeorm": "^0.3.27",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
+    "verbose": false,
+    "silent": true,
+    "noStackTrace": true,
     "moduleFileExtensions": [
       "js",
       "json",
-      "ts"
+      "ts",
+      "json",
+      "node"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": [
+        "ts-jest",
+        {
+          "tsconfig": "tsconfig.spec.json"
+        }
+      ]
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@repo/types$": "<rootDir>/../../packages/types/dist/cjs/index.js",
+      "^@repo/types/(.*)$": "<rootDir>/../../packages/types/dist/cjs/libs/$1.js",
+      "^@repo/microservice-logging-module$": "<rootDir>/../../../packages/nest-modules/microservice-logging-module/dist/cjs/index.js",
+      "^@repo/microservice-health-module$": "<rootDir>/../../../packages/nest-modules/microservice-health-module/dist/cjs/index.js"
+    }
   }
 }
