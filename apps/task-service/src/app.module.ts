@@ -5,6 +5,7 @@ import { MicroserviceLoggingModule } from '@repo/microservice-logging-module';
 import { initMicroserviceHealth } from './microservice-health.config';
 import { TasksModule } from './tasks/tasks.module';
 import { CommentsModule } from './comments/comments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 const SERVICE_NAME = 'task-service';
 const isProduction = process.env.NODE_ENV === 'production';
@@ -18,7 +19,8 @@ const isProduction = process.env.NODE_ENV === 'production';
     initMicroserviceHealth(),
     initPostgresql(),
     TasksModule,
-    CommentsModule
+    CommentsModule,
+    NotificationsModule
   ],
   controllers: [],
   providers: [],

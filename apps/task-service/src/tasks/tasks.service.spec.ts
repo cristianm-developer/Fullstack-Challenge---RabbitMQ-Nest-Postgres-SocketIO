@@ -8,6 +8,7 @@ import { NotFoundException } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto, TaskPriority, TaskStatus } from '@repo/types';
 import { emit } from 'process';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const mockTaskRepository = {
     save: jest.fn(),
@@ -32,6 +33,10 @@ const mockRelUserTaskRepository = {
     create: jest.fn(),
     find: jest.fn(),
     delete: jest.fn(),
+};
+
+const mockNotificationsService = {
+    handleNotification: jest.fn(),
 };
 
 describe('TasksService', () => {
@@ -85,7 +90,11 @@ describe('TasksService', () => {
                 {
                     provide: getRepositoryToken(RelUserTask),
                     useValue: mockRelUserTaskRepository,
-                }      
+                },
+                {
+                    provide: NotificationsService,
+                    useValue: mockNotificationsService,
+                },
             ],
         }).compile();
 

@@ -7,8 +7,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Comment } from './entities/comment.entity';
 import { Task } from '../tasks/entities/task.entity';
-import { CreateCommentDto, ResponseDto, TASK_PATTERNS } from '@repo/types';
+import { CreateCommentDto, ResponseDto, TASK_PATTERNS, WS_NOTIFICATIONS } from '@repo/types';
 import { ClientProxy } from '@nestjs/microservices';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class CommentsService {
@@ -19,6 +20,7 @@ export class CommentsService {
         private readonly taskRepository: Repository<Task>,
         @Inject('TASK_SERVICE')
         private readonly taskClient: ClientProxy,
+        private readonly notificationsService: NotificationsService,
     ) {}
 
     async create(
@@ -46,6 +48,14 @@ export class CommentsService {
             change: `Comentário criado: ${savedComment.content}`,
         });
 
+        this.notificationsService.handleNotification({
+            message: `Novo comentario na tarefa ${task.title}`,
+            data: { url: `/tasks/${task.id}` },
+            title: 'Novo comentario',
+            type: 'INFO',
+            userIds: [task.userId.toString()],
+            event: WS_NOTIFICATIONS.commentNew,
+        });
         return {
             message: 'Comentário criado com sucesso',
             data: savedComment,

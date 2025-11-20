@@ -9,7 +9,8 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Task } from './entities/task.entity';
 import { TaskLog } from './entities/task-log.entity';
 import { RelUserTask } from './entities/rel-user-task.entity';
-import { AddLogDto, CreateTaskDto, FindAllFilters, ResponseDto, TASK_PATTERNS, TaskPriority, TaskStatus, UpdateTaskDto } from '@repo/types';
+import { AddLogDto, CreateTaskDto, FindAllFilters, ResponseDto, TASK_PATTERNS, TaskPriority, TaskStatus, UpdateTaskDto, WS_NOTIFICATIONS } from '@repo/types';
+import { NotificationsService } from '../notifications/notifications.service';
 
 
 
@@ -24,6 +25,7 @@ export class TasksService {
         private readonly relUserTaskRepository: Repository<RelUserTask>,
         @Inject('TASK_SERVICE')
         private readonly taskClient: ClientProxy,
+        private readonly notificationsService: NotificationsService,
     ) {}
 
     async create(createTaskDto: CreateTaskDto): Promise<ResponseDto<Task>> {
@@ -52,6 +54,15 @@ export class TasksService {
             taskId: savedTask.id,
             userId: savedTask.userId,
             change: `Tarefa criada: ${savedTask.title}, data: ${JSON.stringify(savedTask)}`,
+        });
+
+        this.notificationsService.handleNotification({
+            message: `Voce foi adicionado a uma nova tarefa: ${savedTask.title}`,
+            title: 'Nova tarefa',
+            type: 'INFO',
+            userIds: createTaskDto.userIds.map(id => id.toString()),
+            data: { url: `/tasks/${savedTask.id}` },
+            event: WS_NOTIFICATIONS.taskCreated,
         });
 
         return { message: 'Tarefa criada com sucesso', data: savedTask };
@@ -114,6 +125,15 @@ export class TasksService {
             taskId: updatedTask.id,
             userId: updatedTask.userId,
             change: `Tarefa atualizada: ${updatedTask.title}, data: ${JSON.stringify(changes)}`,
+        });
+
+        this.notificationsService.handleNotification({
+            message: `Uma tarefa que voce esta participando foi atualizada: ${updatedTask.title}`,
+            data: { url: `/tasks/${updatedTask.id}` },
+            title: 'Tarefa atualizada',
+            type: 'INFO',
+            userIds: usersToAdd.map(id => id.toString()),
+            event: WS_NOTIFICATIONS.taskUpdated,
         });
 
         return { message: 'Tarefa atualizada com sucesso' };

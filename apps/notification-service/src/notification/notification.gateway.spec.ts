@@ -3,7 +3,7 @@ import { NotificationGateway } from './notification.gateway';
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { NotificationService } from './notification.service';
-import { NotificationMessageDto } from '@repo/types';
+import { NotificationMessageDto, WS_NOTIFICATIONS } from '@repo/types';
 import { JwtService } from '@nestjs/jwt';
 
 const mockNotificationService = {
@@ -85,7 +85,8 @@ describe('NotificationGateway', () => {
         data: { url: 'test' },
         title: 'Novo comentario',
         type: 'INFO',
-        userId: '1',
+        userIds: ['1'],
+        event: WS_NOTIFICATIONS.taskCreated,
       };
       gateway.userSocketMap.set('1', client.id);
       await gateway.sendNotification(notification);

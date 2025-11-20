@@ -7,9 +7,11 @@ import { TasksController } from './tasks.controller';
 import { Task } from './entities/task.entity';
 import { TaskLog } from './entities/task-log.entity';
 import { RelUserTask } from './entities/rel-user-task.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
     imports: [
+        NotificationsModule,
         TypeOrmModule.forFeature([Task, TaskLog, RelUserTask]),
         ClientsModule.registerAsync([
             {

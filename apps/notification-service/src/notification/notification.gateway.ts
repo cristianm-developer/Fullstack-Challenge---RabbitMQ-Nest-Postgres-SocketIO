@@ -59,12 +59,14 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   sendNotification(notification: NotificationMessageDto): void {
-    const userId = this.userSocketMap.get(notification.userId!.toString());
-    if (!userId) {
-      return;
+    for (const userId of notification.userIds!) {
+      const socketId = this.userSocketMap.get(userId);
+      if (!socketId) {
+        continue;
+      }
+      this.server.to(socketId).emit(notification.event, notification);
+      this.logger.log(`Notification sent to user ${userId} with event ${notification.event}`);
     }
-    this.server.to(userId).emit('notification', notification);
-    this.logger.log(`Notification sent to user ${notification.userId}`);
   }
 
 }

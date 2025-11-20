@@ -6,6 +6,7 @@ import { CommentsService } from './comments.service';
 import { Comment } from './entities/comment.entity';
 import { Task } from '../tasks/entities/task.entity';
 import { CreateCommentDto } from '@repo/types';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const mockCommentRepository = {
     save: jest.fn(),
@@ -13,6 +14,10 @@ const mockCommentRepository = {
     find: jest.fn(),
     findOne: jest.fn(),
     findOneBy: jest.fn(),
+};
+
+const mockNotificationsService = {
+    handleNotification: jest.fn(),
 };
 
 const mockTaskRepository = {
@@ -68,7 +73,11 @@ describe('CommentsService', () => {
                 {
                   provide: 'TASK_SERVICE',
                   useValue: mockTaskClient,
-                }
+                },
+                {
+                    provide: NotificationsService,
+                    useValue: mockNotificationsService,
+                },
               
             ],
         }).compile();

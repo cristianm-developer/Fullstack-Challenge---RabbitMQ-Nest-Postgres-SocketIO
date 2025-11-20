@@ -6,3 +6,4 @@ export * from "./libs/task.js";
 export * from "./libs/tasks.enum.js";
 export * from "./libs/comments.js";
 export * from "./libs/notification.js";
+export * from "./consts/notifications.js";

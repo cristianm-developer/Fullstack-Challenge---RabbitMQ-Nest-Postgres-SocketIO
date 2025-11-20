@@ -6,9 +6,11 @@ import { Comment } from './entities/comment.entity';
 import { Task } from '../tasks/entities/task.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
+    NotificationsModule,
     TypeOrmModule.forFeature([Comment, Task]),
     ClientsModule.registerAsync([
       {
