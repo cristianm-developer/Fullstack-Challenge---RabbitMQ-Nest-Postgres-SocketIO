@@ -1,8 +1,10 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseInterceptors } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TasksService } from './tasks.service';
 import { AddLogDto, CreateTaskDto, FindAllFilters, TASK_PATTERNS, UpdateTaskDto } from '@repo/types';
+import { HttpToRpcInterceptor, MicroserviceLoggingInterceptor } from '@repo/microservice-interceptors';
 
+@UseInterceptors(MicroserviceLoggingInterceptor, HttpToRpcInterceptor)
 @Controller()
 export class TasksController {
     constructor(private readonly tasksService: TasksService) {}

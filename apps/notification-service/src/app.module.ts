@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { MicroserviceLoggingModule } from '@repo/microservice-logging-module';
 import { initMicroserviceHealth } from './microservice-health.config';
-import { NotificationGateway } from './notification/notification.gateway';
 import { NotificationModule } from './notification/notification.module';
+import { MicroserviceInterceptorModule } from '@repo/microservice-interceptors';
 
 const SERVICE_NAME = 'task-service';
 const isProduction = process.env.NODE_ENV === 'production';
@@ -14,14 +13,11 @@ const isProduction = process.env.NODE_ENV === 'production';
       isGlobal: true,
       envFilePath: isProduction ? undefined : '.env.example',
     }),
-    MicroserviceLoggingModule.forRoot(SERVICE_NAME),
     initMicroserviceHealth(),
-    NotificationModule
+    NotificationModule,
+    MicroserviceInterceptorModule.forRoot(SERVICE_NAME),
   ],
   controllers: [],
   providers: [],
-  exports: [
-
-  ]
 })
 export class AppModule {}

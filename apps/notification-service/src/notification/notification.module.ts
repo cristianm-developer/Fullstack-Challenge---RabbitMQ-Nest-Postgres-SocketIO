@@ -3,12 +3,12 @@ import { NotificationGateway } from './notification.gateway';
 import { NotificationService } from './notification.service';
 import { initJwtModule } from '../jwt-module.config';
 import { NotificationController } from './notification.controller';
-
 @Module({
     imports: [
-        initJwtModule()
+        initJwtModule(),
     ],
     providers: [
+
         NotificationGateway, 
         NotificationService
     ],

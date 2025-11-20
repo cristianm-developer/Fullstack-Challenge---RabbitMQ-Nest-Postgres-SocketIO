@@ -1,8 +1,10 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_PATTERNS, LoginUserDto, RegisterUserDto, UpdateUserDto } from '@repo/types';
+import { HttpToRpcInterceptor, MicroserviceLoggingInterceptor } from '@repo/microservice-interceptors';
 
+@UseInterceptors(MicroserviceLoggingInterceptor, HttpToRpcInterceptor)
 @Controller()
 export class AuthController {
     constructor(private readonly authService: AuthService) {}

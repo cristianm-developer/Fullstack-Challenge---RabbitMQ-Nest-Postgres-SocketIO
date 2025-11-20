@@ -1,8 +1,10 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseInterceptors } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CommentsService } from './comments.service';
 import { COMMENT_PATTERNS,  CreateCommentDto } from '@repo/types';
+import { HttpToRpcInterceptor, MicroserviceLoggingInterceptor } from '@repo/microservice-interceptors';
 
+@UseInterceptors(MicroserviceLoggingInterceptor, HttpToRpcInterceptor)
 @Controller()
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}

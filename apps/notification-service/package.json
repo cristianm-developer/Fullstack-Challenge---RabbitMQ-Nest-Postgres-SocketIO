@@ -30,14 +30,14 @@
     "@nestjs/platform-socket.io": "^11.1.9",
     "@nestjs/typeorm": "^11.0.0",
     "@repo/microservice-health-module": "*",
-    "@repo/microservice-logging-module": "*",
     "@repo/types": "*",
     "amqp-connection-manager": "^5.0.0",
     "amqplib": "^0.10.9",
     "dotenv": "^16.0.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "@repo/microservice-interceptors": "*"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

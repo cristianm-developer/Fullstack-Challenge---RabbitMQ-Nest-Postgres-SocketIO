@@ -17,7 +17,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
             },
         }
         
-    })
+    }),
+    inject: [ConfigService],
   }])],
   providers: [NotificationsService],
   exports: [NotificationsService],

@@ -1,8 +1,11 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UseInterceptors } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { NOTIFICATION_PATTERNS, NotificationMessageDto } from '@repo/types';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { HttpToRpcInterceptor, MicroserviceLoggingInterceptor } from '@repo/microservice-interceptors';
 
+
+@UseInterceptors(MicroserviceLoggingInterceptor, HttpToRpcInterceptor)
 @Controller()
 export class NotificationController {
 

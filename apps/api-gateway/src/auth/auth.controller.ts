@@ -5,11 +5,15 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from './auth.guard';
+import { InjectPinoLogger, PinoLogger } from 'pino-nestjs';
 
 @ApiTags('Autenticação')
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    constructor(
+        private readonly logger: PinoLogger,
+        private readonly authService: AuthService
+    ) {}
 
     @Post('login')
     @ApiOperation({ summary: 'Realizar login', description: 'Autentica um usuário e retorna tokens de acesso' })
@@ -24,7 +28,9 @@ export class AuthController {
     @ApiResponse({ status: 201, description: 'Usuário registrado com sucesso' })
     @ApiResponse({ status: 400, description: 'Dados inválidos ou usuário já existe' })
     async register(@Body() registerUserDto: RegisterUserDto) {
-        return await this.authService.register(registerUserDto);
+
+        this.logger.info('Register request received', { registerUserDto });
+        return  this.authService.register(registerUserDto);
     }
 
     @UseGuards(AuthGuard)

@@ -4,7 +4,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { WebSocketProxyMiddleware } from './websocket-proxy.middleware';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { RpcExceptionFilter } from './common/filters/rpc-exception.filter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -14,8 +14,9 @@ async function bootstrap() {
   const HTTP_PORT = configService.get<number>('PORT') || 3000;
   const wsHost = configService.get<string>('WS_HOST');
 
-  // Establecer prefijo global /api para todos los controladores
   app.setGlobalPrefix('api');
+
+  app.useGlobalFilters(new RpcExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -25,7 +26,6 @@ async function bootstrap() {
     })
   );
 
-  // Configuração do Swagger
   const config = new DocumentBuilder()
     .setTitle('API Gateway - Jungle Gaming Challenge')
     .setDescription('Documentação da API Gateway com endpoints de autenticação e gerenciamento de tarefas')
@@ -55,12 +55,10 @@ async function bootstrap() {
 
   const server = await app.listen(process.env.PORT ?? 3000);
 
-  // Setup WebSocket proxy upgrade handling
   if (wsHost) {
     logger.log(`WebSocket proxy configured to forward to: ${wsHost}`);
     logger.log(`WebSocket requests to /socket.io/* and /notifications will be proxied`);
     
-    // Get the proxy middleware instance to attach WebSocket upgrade handler
     try {
       const wsProxyMiddleware = app.get(WebSocketProxyMiddleware);
       if (wsProxyMiddleware && wsProxyMiddleware.proxyMiddleware) {

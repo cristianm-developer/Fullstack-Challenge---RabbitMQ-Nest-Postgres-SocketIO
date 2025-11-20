@@ -18,6 +18,7 @@ import {
   UpdateUserDto,
 } from '@repo/types';
 import { InjectRepository } from '@nestjs/typeorm';
+import { InjectPinoLogger, PinoLogger } from 'pino-nestjs';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     @InjectRepository(Auth)
     private readonly repository: Repository<Auth>,
+
   ) {}
 
   async login(authData: LoginUserDto): Promise<AuthResponse> {

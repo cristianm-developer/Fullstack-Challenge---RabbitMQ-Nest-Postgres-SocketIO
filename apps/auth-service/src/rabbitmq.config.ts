@@ -11,7 +11,7 @@ export const initRabbitMQ = async (app: INestApplication, configService: ConfigS
         throw new Error('RABBITMQ_URL or RABBITMQ_QUEUE is not set');
     }
 
-    app.connectMicroservice<MicroserviceOptions>({
+    const microserviceInstance = app.connectMicroservice<MicroserviceOptions>({
         transport: Transport.RMQ,
         options: {
             urls: [RABBITMQ_URL!],
@@ -21,6 +21,7 @@ export const initRabbitMQ = async (app: INestApplication, configService: ConfigS
                 durable: false
             }
         }
-    })
-    
+    });
+
+    return microserviceInstance;
 }

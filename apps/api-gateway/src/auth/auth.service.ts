@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { AUTH_PATTERNS, LoginUserDto as LoginUserDtoType, RegisterUserDto as RegisterUserDtoType, UpdateUserDto as UpdateUserDtoType } from '@repo/types';
-import { firstValueFrom } from 'rxjs';
 import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -18,9 +17,8 @@ export class AuthService {
             usernameOrEmail: loginUserDto.usernameOrEmail,
             password: loginUserDto.password,
         };
-        return await firstValueFrom(
-            this.authClient.send(AUTH_PATTERNS.LOGIN_USER, payload)
-        );
+        return this.authClient.send(AUTH_PATTERNS.LOGIN_USER, payload)
+       
     }
 
     async register(registerUserDto: RegisterUserDto) {
@@ -29,15 +27,12 @@ export class AuthService {
             username: registerUserDto.username,
             password: registerUserDto.password,
         };
-        return await firstValueFrom(
-            this.authClient.send(AUTH_PATTERNS.REGISTER_USER, payload)
-        );
+        return this.authClient.send(AUTH_PATTERNS.REGISTER_USER, payload)
+       
     }
 
     async findAll() {
-        return await firstValueFrom(
-            this.authClient.send(AUTH_PATTERNS.FIND_ALL_USERS, {})
-        );
+        return this.authClient.send(AUTH_PATTERNS.FIND_ALL_USERS, {})
     }
 
     async update(updateUserDto: UpdateUserDto) {
@@ -47,8 +42,6 @@ export class AuthService {
             username: updateUserDto.username,
             password: updateUserDto.password,
         };
-        return await firstValueFrom(
-            this.authClient.send(AUTH_PATTERNS.UPDATE_USER, payload)
-        );
+        return this.authClient.send(AUTH_PATTERNS.UPDATE_USER, payload)
     }
 }

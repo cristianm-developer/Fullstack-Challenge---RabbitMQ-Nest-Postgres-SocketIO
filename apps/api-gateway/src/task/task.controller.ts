@@ -22,7 +22,6 @@ export class TaskController {
     @ApiResponse({ status: 400, description: 'Dados inválidos' })
     @ApiResponse({ status: 401, description: 'Não autorizado' })
     async create(@Body() createTaskDto: CreateTaskDto, @CurrentUser() user: JwtPayload) {
-        // Força o creatorId para ser o ID do usuário autenticado (ignora qualquer valor enviado)
         const taskData = {
             ...createTaskDto,
             creatorId: user.sub,
@@ -65,7 +64,6 @@ export class TaskController {
     @ApiResponse({ status: 401, description: 'Não autorizado' })
     @ApiResponse({ status: 404, description: 'Tarefa não encontrada' })
     async createComment(@Body() createCommentDto: CreateCommentDto, @CurrentUser() user: JwtPayload) {
-        // Força o userId para ser o ID do usuário autenticado (ignora qualquer valor enviado)
         const commentData = {
             ...createCommentDto,
             userId: user.sub,
