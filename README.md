@@ -125,7 +125,7 @@ WebSocket sem resiliência — necessita de fallback com polling em caso de falh
 8. Sistema de notificações incompleto — falta armazenar e exibir notificações históricas.
 9. Interface visual simples — uso de Framer Motion tornaria a experiência mais agradável.
 10. Ausência de linter ativo nos microserviços.
-11. Falta de CI/CD para automatizar testes e deploy.
+11. Consideraria trocar o proveedor de autenticação para um externo como Firebase Auth, que permitiria implementar facilmente um serviço dedicado na segurança, e ferramentas como autenticação de dois pasos, autenticação por gmail, autenticação seamless, etc.
 
 > O escopo foi limitado ao solicitado, mas o projeto ainda requer diversas telas (ex.: gestão de usuário), funcionalidades adicionais (ex.: painel de notificações, respostas a comentários, tags, mensagens diretas, tarefas relacionadas), além de melhorias de performance e resiliência.
 > Seria interessante também implementar um worker e uma PWA para melhorar usabilidade e funcionalidades offline.
