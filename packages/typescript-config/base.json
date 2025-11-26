@@ -13,11 +13,11 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES2022"
-  },
-  "paths": {
-    "@repo/types": ["packages/types/dist"],
-    "@repo/microservice-health-module": ["packages/nest-modules/microservice-health-module/dist/esm"],
-    "@repo/microservice-logging-module": ["packages/nest-modules/microservice-logging-module/dist/esm"]
+    "target": "ES2022",
+    "paths": {
+      "@repo/types": ["packages/types/dist"],
+      "@repo/microservice-health-module": ["packages/nest-modules/microservice-health-module/dist/esm"],
+      "@repo/microservice-logging-module": ["packages/nest-modules/microservice-logging-module/dist/esm"]
+    }
   }
 }

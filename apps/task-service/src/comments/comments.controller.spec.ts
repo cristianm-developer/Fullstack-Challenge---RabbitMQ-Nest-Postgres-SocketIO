@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CommentsController } from './comments.controller';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from '@repo/types';
+import { LoggerModule } from 'pino-nestjs';
+import { MicroserviceInterceptorModule } from '@repo/microservice-interceptors';
 
 describe('CommentsController', () => {
     let controller: CommentsController;
@@ -23,6 +25,10 @@ describe('CommentsController', () => {
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
+            imports: [
+                LoggerModule.forRoot(),
+                MicroserviceInterceptorModule.forRoot('task-service'),
+            ],
             controllers: [CommentsController],
             providers: [
                 {

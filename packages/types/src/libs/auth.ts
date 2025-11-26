@@ -7,12 +7,25 @@ export class LoginUserDto {
     usernameOrEmail!: string;
     password!: string;
 }
-
-export class AuthResponse {
+export class AuthTokensSchema {
     accessToken!: string;
     refreshToken!: string;
     expiresIn!: string;
 }
+
+export class AuthSubSchema {
+    userId!: number;
+    username!: string;
+    email!: string;
+}
+export class AuthResponse  {
+    accessToken!: string;
+    refreshToken!: string;
+    expiresIn!: string;
+    sub!: AuthSubSchema;
+}
+
+
 
 export class JwtPayload {
     sub!: number;

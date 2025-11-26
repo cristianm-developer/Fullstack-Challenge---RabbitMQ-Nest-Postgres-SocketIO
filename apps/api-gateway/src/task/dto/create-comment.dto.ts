@@ -12,15 +12,6 @@ export class CreateCommentDto {
     @IsString({ message: 'O conteúdo do comentário deve ser uma string' })
     @MaxLength(1000, { message: 'O conteúdo do comentário deve ter no máximo 1000 caracteres' })
     content!: string;
-
-    @ApiProperty({
-        description: 'ID da tarefa',
-        example: 1,
-        required: true,
-    })
-    @IsNotEmpty({ message: 'O ID da tarefa é obrigatório' })
-    @IsInt({ message: 'O ID da tarefa deve ser um número inteiro' })
-    @Min(1, { message: 'O ID da tarefa deve ser maior que zero' })
-    taskId!: number;
+    
 }
 

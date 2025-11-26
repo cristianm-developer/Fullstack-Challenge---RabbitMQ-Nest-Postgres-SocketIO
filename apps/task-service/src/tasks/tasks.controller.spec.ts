@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
 import { TaskPriority, TaskStatus } from '@repo/types';
+import { MicroserviceInterceptorModule } from '@repo/microservice-interceptors';
+import { LoggerModule } from 'pino-nestjs';
 
 describe('TasksController', () => {
     let controller: TasksController;
@@ -29,6 +31,10 @@ describe('TasksController', () => {
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
+            imports: [
+                LoggerModule.forRoot(),
+                MicroserviceInterceptorModule.forRoot('task-service'),
+            ],
             controllers: [TasksController],
             providers: [
                 {
@@ -111,6 +117,8 @@ describe('TasksController', () => {
             const filters = {
                 status: TaskStatus.TODO,
                 priority: TaskPriority.HIGH,
+                page: 1,
+                limit: 10,
             };
 
             const expectedResult = [mockTask];
@@ -147,7 +155,7 @@ describe('TasksController', () => {
 
             mockTasksService.findOne.mockResolvedValue(mockTask);
 
-            const result = await controller.findOne(taskId);
+            const result = await controller.findOne({ id: taskId });
 
             expect(result).toEqual(mockTask);
             expect(mockTasksService.findOne).toHaveBeenCalledWith(taskId);

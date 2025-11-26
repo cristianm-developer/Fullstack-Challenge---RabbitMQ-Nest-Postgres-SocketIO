@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { AUTH_PATTERNS, LoginUserDto as LoginUserDtoType, RegisterUserDto as RegisterUserDtoType, UpdateUserDto as UpdateUserDtoType } from '@repo/types';
+import { AUTH_PATTERNS, LoginUserDto as LoginUserDtoType, RefreshTokenDto, RegisterUserDto as RegisterUserDtoType, UpdateUserDto as UpdateUserDtoType } from '@repo/types';
 import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -43,5 +43,9 @@ export class AuthService {
             password: updateUserDto.password,
         };
         return this.authClient.send(AUTH_PATTERNS.UPDATE_USER, payload)
+    }
+
+    async refreshToken(refreshTokenDto: RefreshTokenDto) {
+        return this.authClient.send(AUTH_PATTERNS.REFRESH_TOKEN, refreshTokenDto)
     }
 }

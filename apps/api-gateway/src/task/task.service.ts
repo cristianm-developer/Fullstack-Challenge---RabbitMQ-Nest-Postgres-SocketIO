@@ -8,12 +8,13 @@ import {
     CreateCommentDto as CreateCommentDtoType,
     COMMENT_PATTERNS,
     AddLogDto as AddLogDtoType,
+    TaskPriority,
+    UpdateTaskWrapper,
 } from '@repo/types';
 import { firstValueFrom } from 'rxjs';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
 import { FindAllFilters } from './dto/find-all-filters.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { PaginationDto } from './dto/pagination-dto';
 
 @Injectable()
 export class TaskService {
@@ -22,67 +23,40 @@ export class TaskService {
         private readonly taskClient: ClientProxy,
     ) {}
 
-    async create(createTaskDto: CreateTaskDto & { creatorId: number }) {
-        const payload: CreateTaskDtoType = {
-            title: createTaskDto.title,
-            description: createTaskDto.description,
-            prazo: createTaskDto.prazo,
-            priority: createTaskDto.priority,
-            userIds: createTaskDto.userIds,
-            creatorId: createTaskDto.creatorId,
-        };
+    async create(createTaskDto: CreateTaskDtoType) {    
         return await firstValueFrom(
-            this.taskClient.send(TASK_PATTERNS.CREATE_TASK, payload)
+            this.taskClient.send(TASK_PATTERNS.CREATE_TASK, createTaskDto)
         );
     }
 
-    async update(updateTaskDto: UpdateTaskDto) {
-        const payload: UpdateTaskDtoType = {
-            id: updateTaskDto.id,
-            title: updateTaskDto.title,
-            description: updateTaskDto.description,
-            deadline: updateTaskDto.deadline,
-            priority: updateTaskDto.priority,
-            status: updateTaskDto.status,
-            userIds: updateTaskDto.userIds,
-        };
+    async update(data: UpdateTaskWrapper) {
         return await firstValueFrom(
-            this.taskClient.send(TASK_PATTERNS.UPDATE_TASK, payload)
+            this.taskClient.send(TASK_PATTERNS.UPDATE_TASK, data)
         );
     }
 
     async findAll(filters?: FindAllFilters) {
-        const payload: FindAllFiltersType = filters ? {
-            title: filters.title,
-            status: filters.status,
-            priority: filters.priority,
-            userId: filters.userId,
-        } : {};
         return await firstValueFrom(
-            this.taskClient.send(TASK_PATTERNS.FIND_ALL_TASKS, payload)
+            this.taskClient.send(TASK_PATTERNS.FIND_ALL_TASKS, filters)
         );
     }
 
     async findOne(id: number) {
         return await firstValueFrom(
-            this.taskClient.send(TASK_PATTERNS.FIND_ONE_TASK, id)
+            this.taskClient.send(TASK_PATTERNS.FIND_ONE_TASK, {id})
         );
     }
 
-    async createComment(createCommentDto: CreateCommentDto & { userId: number }) {
-        const payload: CreateCommentDtoType = {
-            content: createCommentDto.content,
-            taskId: createCommentDto.taskId,
-            userId: createCommentDto.userId,
-        };
+    async createComment(createCommentDto: CreateCommentDto ){
+        
         return await firstValueFrom(
-            this.taskClient.send(COMMENT_PATTERNS.CREATE_COMMENT, payload)
+            this.taskClient.send(COMMENT_PATTERNS.CREATE_COMMENT, createCommentDto)
         );
     }
 
-    async findAllComments(taskId: number) {
+    async findAllComments(taskId: number, pagination: PaginationDto) {
         return await firstValueFrom(
-            this.taskClient.send(COMMENT_PATTERNS.FIND_ALL_COMMENTS, taskId)
+            this.taskClient.send(COMMENT_PATTERNS.FIND_ALL_COMMENTS, {taskId, ...pagination})
         );
     }
 

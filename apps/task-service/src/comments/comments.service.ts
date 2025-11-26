@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Comment } from './entities/comment.entity';
 import { Task } from '../tasks/entities/task.entity';
-import { CreateCommentDto, ResponseDto, TASK_PATTERNS, WS_NOTIFICATIONS } from '@repo/types';
+import { CreateCommentDto, FindAllCommentsFilters, ResponseDto, TASK_PATTERNS, WS_NOTIFICATIONS } from '@repo/types';
 import { ClientProxy } from '@nestjs/microservices';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -28,6 +28,7 @@ export class CommentsService {
     ): Promise<ResponseDto<Comment>> {
         const task = await this.taskRepository.findOne({
             where: { id: createCommentDto.taskId },
+            relations: ['userTasks'],
         });
 
         if (!task) {
@@ -50,10 +51,11 @@ export class CommentsService {
 
         this.notificationsService.handleNotification({
             message: `Novo comentario na tarefa ${task.title}`,
-            data: { url: `/tasks/${task.id}` },
-            title: 'Novo comentario',
+            data: { id: task.id },
+            title: 'Novo comentario',            
+            createdBy: savedComment.userId,
             type: 'INFO',
-            userIds: [task.userId.toString()],
+            userIds: task.userTasks.map(ut => ut.userId.toString()),
             event: WS_NOTIFICATIONS.commentNew,
         });
         return {
@@ -62,23 +64,26 @@ export class CommentsService {
         };
     }
 
-    async findAll(taskId: number): Promise<ResponseDto<Comment[]>> {
-        const task = await this.taskRepository.findOne({
-            where: { id: taskId },
-        });
+    async findAll(filters: FindAllCommentsFilters): Promise<ResponseDto<Comment[]>> {
+        const page = filters.page ?? 1;
+        const limit = filters.limit ?? 10;
+        const skip = (page - 1) * limit;
 
-        if (!task) {
-            throw new NotFoundException('A tarefa nao existe.');
-        }
-
-        const comments = await this.commentRepository.find({
-            where: { taskId },
-            relations: ['task'],
-        });
-
+        const queryBuilder = this.commentRepository.createQueryBuilder('comments');
+        queryBuilder.orderBy('comments.createdAt', 'DESC');
+        queryBuilder.skip(skip);
+        queryBuilder.take(limit);
+        queryBuilder.where('comments.taskId = :taskId', { taskId: filters.taskId });
+        const [comments, total] = await queryBuilder.getManyAndCount();
         return {
             message: 'Comentários carregados com sucesso',
             data: comments,
-        };
+            meta: {
+                total,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                page
+            }
+        }
     }
 }

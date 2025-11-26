@@ -8,6 +8,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "docker:prune:auth": "turbo prune @repo/auth-service --docker",
+    "docker:prune:web": "turbo prune @repo/web --docker",
     "docker:prune:task": "turbo prune @repo/task-service --docker",
     "docker:prune:api-gateway": "turbo prune @repo/api-gateway --docker",
     "docker:prune:notification": "turbo prune @repo/notification-service --docker",
@@ -33,6 +34,8 @@
     "packages/**/*"
   ],
   "dependencies": {
-    "@nestjs/throttler": "^6.4.0"
+    "@nestjs/throttler": "^6.4.0",
+    "axios": "^1.13.2",
+    "react-auth-kit": "^4.0.2-alpha.11"
   }
 }

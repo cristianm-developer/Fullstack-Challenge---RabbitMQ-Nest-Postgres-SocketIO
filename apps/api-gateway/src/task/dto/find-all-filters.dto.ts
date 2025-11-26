@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, IsString, Min, MaxLength } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Min, MaxLength, IsArray } from 'class-validator';
 import { TaskPriority, TaskStatus } from '@repo/types';
+import { Transform, Type } from 'class-transformer';
 
 export class FindAllFilters {
     @ApiProperty({
@@ -38,10 +39,45 @@ export class FindAllFilters {
         description: 'Filtrar tarefas por ID do usuário',
         example: 1,
         required: false,
+        type: Number
     })
     @IsOptional()
-    @IsInt({ message: 'O ID do usuário deve ser um número inteiro' })
-    @Min(1, { message: 'O ID do usuário deve ser maior que zero' })
-    userId?: number;
+    @Transform(({value}) => {
+        if(!value) return undefined;
+
+        if(Array.isArray(value)) {
+            return value.map(v => typeof v === 'string' ? parseInt(v, 10) : Number(v))
+        } else {
+            const num = parseInt(value, 10);
+            return [num]
+        }
+
+    })
+    @IsArray({ message: 'Os IDs dos usuários devem ser um array' })
+    @IsInt({ each: true, message: 'O ID do usuário deve ser um número inteiro' })
+    @Min(1, { each: true, message: 'O ID do usuário deve ser maior que zero' })
+    userIds?: number[];
+
+    @ApiProperty({
+        description: 'Página da paginação',
+        example: 1,
+        required: false,
+        minimum: 1,
+    })
+    @Type(() => Number)
+    @IsInt({ message: 'A página deve ser um número inteiro' })
+    @Min(1, { message: 'A página deve ser maior que zero' })
+    page?: number;
+
+    @ApiProperty({
+        description: 'Limite de itens por página (paginação)',
+        example: 10,
+        required: false,
+        minimum: 1,
+    })
+    @Type(() => Number)
+    @IsInt({ message: 'O limite deve ser um número inteiro' })
+    @Min(1, { message: 'O limite deve ser maior que zero' })
+    limit?: number;
 }
 

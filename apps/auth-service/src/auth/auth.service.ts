@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import {
   AuthResponse,
+  AuthTokensSchema,
   ListedUserDto,
   LoginUserDto,
   RefreshTokenDto,
@@ -18,7 +19,6 @@ import {
   UpdateUserDto,
 } from '@repo/types';
 import { InjectRepository } from '@nestjs/typeorm';
-import { InjectPinoLogger, PinoLogger } from 'pino-nestjs';
 
 @Injectable()
 export class AuthService {
@@ -49,7 +49,14 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales incorrectas');
     }
 
-    return this.generateTokens(user.id);
+    return {
+      ...this.generateTokens(user.id),
+      sub: {
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+      },
+    };
   }
 
   async register(authData: RegisterUserDto): Promise<AuthResponse> {
@@ -67,7 +74,14 @@ export class AuthService {
       password: hashedPassword,
     });
     await this.repository.save(newUser);
-    return this.generateTokens(newUser.id);
+    return {
+      ...this.generateTokens(newUser.id),
+      sub: {
+        userId: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+      },
+    };
   }
 
   async update(authData: UpdateUserDto): Promise<{ message: string }> {
@@ -85,7 +99,7 @@ export class AuthService {
     return { message: 'Usuario atualizado com sucesso' };
   }
 
-  refreshToken(payload: RefreshTokenDto): AuthResponse {
+  refreshToken(payload: RefreshTokenDto): AuthTokensSchema {
     try {
       const decoded = this.jwtService.verify(payload.refreshToken);
       return this.generateTokens(decoded.sub);
@@ -102,7 +116,7 @@ export class AuthService {
     }));
   }
 
-  private generateTokens(userId: number): AuthResponse {
+  private generateTokens(userId: number) {
     const JWT_ACCESS_EXPIRES =
       this.configService.get<string>('JWT_ACCESS_EXPIRES');
     const JWT_REFRESH_EXPIRES = this.configService.get<string>(

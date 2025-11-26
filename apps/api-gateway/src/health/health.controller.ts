@@ -29,6 +29,6 @@ export class HealthController {
         description: 'Serviço indisponível. Um ou mais serviços dependentes estão fora do ar' 
     })
     async checkAllDependencies() {
-        return await this.healthService.checkAllDependencies();        
+        return this.healthService.checkAllDependencies();        
     }
 }

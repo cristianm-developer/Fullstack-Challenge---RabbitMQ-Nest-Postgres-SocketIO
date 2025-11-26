@@ -20,9 +20,9 @@ export class Task {
     @Column({
         type: 'int',
         nullable: false,
-        name: 'user_id',
+        name: 'created_by',
     })
-    userId!: number;
+    createdBy!: number;
 
     @Column({
         length: 255,
@@ -38,7 +38,7 @@ export class Task {
     description?: string;
 
     @Column({
-        type: 'date',
+        type: 'timestamp',
         nullable: true,
         name: 'deadline',
     })

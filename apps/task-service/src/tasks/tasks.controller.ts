@@ -1,7 +1,7 @@
 import { Controller, UseInterceptors } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TasksService } from './tasks.service';
-import { AddLogDto, CreateTaskDto, FindAllFilters, TASK_PATTERNS, UpdateTaskDto } from '@repo/types';
+import { AddLogDto, CreateTaskDto, FindAllFilters, TASK_PATTERNS, UpdateTaskDto, UpdateTaskWrapper } from '@repo/types';
 import { HttpToRpcInterceptor, MicroserviceLoggingInterceptor } from '@repo/microservice-interceptors';
 
 @UseInterceptors(MicroserviceLoggingInterceptor, HttpToRpcInterceptor)
@@ -15,7 +15,7 @@ export class TasksController {
     }
 
     @MessagePattern(TASK_PATTERNS.UPDATE_TASK)
-    async update(@Payload() updateTaskDto: UpdateTaskDto) {
+    async update(@Payload() updateTaskDto: UpdateTaskWrapper) {
         return await this.tasksService.update(updateTaskDto);
     }
 
@@ -25,7 +25,7 @@ export class TasksController {
     }
 
     @MessagePattern(TASK_PATTERNS.FIND_ONE_TASK)
-    async findOne(@Payload() id: number) {
+    async findOne(@Payload() {id}: {id: number}) {
         return await this.tasksService.findOne(id);
     }
 

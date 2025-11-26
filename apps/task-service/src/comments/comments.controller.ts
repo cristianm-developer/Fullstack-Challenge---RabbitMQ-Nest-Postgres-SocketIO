@@ -1,7 +1,7 @@
 import { Controller, UseInterceptors } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CommentsService } from './comments.service';
-import { COMMENT_PATTERNS,  CreateCommentDto } from '@repo/types';
+import { COMMENT_PATTERNS,  CreateCommentDto, FindAllCommentsFilters } from '@repo/types';
 import { HttpToRpcInterceptor, MicroserviceLoggingInterceptor } from '@repo/microservice-interceptors';
 
 @UseInterceptors(MicroserviceLoggingInterceptor, HttpToRpcInterceptor)
@@ -15,8 +15,8 @@ export class CommentsController {
   }
 
   @MessagePattern(COMMENT_PATTERNS.FIND_ALL_COMMENTS)
-  async findAll(@Payload() taskId: number) {
-    return await this.commentsService.findAll(taskId);
+  async findAll(@Payload() filters: FindAllCommentsFilters) {
+    return await this.commentsService.findAll(filters);
   }
 
 }

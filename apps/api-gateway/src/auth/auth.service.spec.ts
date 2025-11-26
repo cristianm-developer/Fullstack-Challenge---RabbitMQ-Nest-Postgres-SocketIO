@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { ClientProxy } from '@nestjs/microservices';
-import { AUTH_PATTERNS, LoginUserDto, RegisterUserDto, UpdateUserDto } from '@repo/types';
-import { of } from 'rxjs';
+import { AUTH_PATTERNS, LoginUserDto, RefreshTokenDto, RegisterUserDto, UpdateUserDto } from '@repo/types';
+import { firstValueFrom, of } from 'rxjs';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -51,9 +51,13 @@ describe('AuthService', () => {
 
       mockAuthClient.send.mockReturnValue(of(expectedResponse));
 
-      const result = await service.login(loginDto);
+      const observable = await service.login(loginDto);
+      const result = await firstValueFrom(observable);
 
-      expect(authClient.send).toHaveBeenCalledWith(AUTH_PATTERNS.LOGIN_USER, loginDto);
+      expect(authClient.send).toHaveBeenCalledWith(AUTH_PATTERNS.LOGIN_USER, {
+        usernameOrEmail: loginDto.usernameOrEmail,
+        password: loginDto.password,
+      });
       expect(result).toEqual(expectedResponse);
     });
   });
@@ -77,9 +81,14 @@ describe('AuthService', () => {
 
       mockAuthClient.send.mockReturnValue(of(expectedResponse));
 
-      const result = await service.register(registerDto);
+      const observable = await service.register(registerDto);
+      const result = await firstValueFrom(observable);
 
-      expect(authClient.send).toHaveBeenCalledWith(AUTH_PATTERNS.REGISTER_USER, registerDto);
+      expect(authClient.send).toHaveBeenCalledWith(AUTH_PATTERNS.REGISTER_USER, {
+        email: registerDto.email,
+        username: registerDto.username,
+        password: registerDto.password,
+      });
       expect(result).toEqual(expectedResponse);
     });
   });
@@ -97,7 +106,8 @@ describe('AuthService', () => {
 
       mockAuthClient.send.mockReturnValue(of(expectedResponse));
 
-      const result = await service.findAll();
+      const observable = await service.findAll();
+      const result = await firstValueFrom(observable);
 
       expect(authClient.send).toHaveBeenCalledWith(AUTH_PATTERNS.FIND_ALL_USERS, {});
       expect(result).toEqual(expectedResponse);
@@ -122,10 +132,36 @@ describe('AuthService', () => {
 
       mockAuthClient.send.mockReturnValue(of(expectedResponse));
 
-      const result = await service.update(updateDto);
+      const observable = await service.update(updateDto);
+      const result = await firstValueFrom(observable);
 
-      expect(authClient.send).toHaveBeenCalledWith(AUTH_PATTERNS.UPDATE_USER, updateDto);
+      expect(authClient.send).toHaveBeenCalledWith(AUTH_PATTERNS.UPDATE_USER, {
+        id: updateDto.id,
+        email: updateDto.email,
+        username: updateDto.username,
+        password: updateDto.password,
+      });
       expect(result).toEqual(expectedResponse);
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should be defined', () => {
+      expect(service.refreshToken).toBeDefined();
+    });
+
+    it('should call auth microservice with REFRESH_TOKEN pattern', async () => {
+      const refreshTokenDto: RefreshTokenDto = {
+        refreshToken: 'refreshToken123',
+      };
+      const expectedResponse = {
+        accessToken: 'token',
+        refreshToken: 'refresh',
+        expiresIn: '3600',
+      };
+      mockAuthClient.send.mockReturnValue(of(expectedResponse));
+      const observable = await service.refreshToken(refreshTokenDto);
+      const result = await firstValueFrom(observable);
     });
   });
 });

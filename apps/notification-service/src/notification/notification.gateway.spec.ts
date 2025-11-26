@@ -5,6 +5,7 @@ import { Server, Socket } from 'socket.io';
 import { NotificationService } from './notification.service';
 import { NotificationMessageDto, WS_NOTIFICATIONS } from '@repo/types';
 import { JwtService } from '@nestjs/jwt';
+import { LoggerModule } from 'pino-nestjs';
 
 const mockNotificationService = {
   verifyToken: jest.fn().mockReturnValue({ sub: 1 }),
@@ -27,6 +28,9 @@ describe('NotificationGateway', () => {
     }
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        LoggerModule.forRoot(),      
+      ],
       providers: [ 
         NotificationGateway, 
         { provide: JwtService, useValue: mockJwtService },

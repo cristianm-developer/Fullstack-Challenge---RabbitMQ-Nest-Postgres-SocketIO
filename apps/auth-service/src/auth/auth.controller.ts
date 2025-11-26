@@ -1,7 +1,7 @@
 import { Controller, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { AUTH_PATTERNS, LoginUserDto, RegisterUserDto, UpdateUserDto } from '@repo/types';
+import { AUTH_PATTERNS, LoginUserDto, RefreshTokenDto, RegisterUserDto, UpdateUserDto } from '@repo/types';
 import { HttpToRpcInterceptor, MicroserviceLoggingInterceptor } from '@repo/microservice-interceptors';
 
 @UseInterceptors(MicroserviceLoggingInterceptor, HttpToRpcInterceptor)
@@ -28,6 +28,11 @@ export class AuthController {
     @MessagePattern(AUTH_PATTERNS.UPDATE_USER)
     async update(@Payload() payload: UpdateUserDto) {
         return await this.authService.update(payload);
+    }
+
+    @MessagePattern(AUTH_PATTERNS.REFRESH_TOKEN)
+    async refreshToken(@Payload() payload: RefreshTokenDto) {
+        return await this.authService.refreshToken(payload);
     }
 
 }

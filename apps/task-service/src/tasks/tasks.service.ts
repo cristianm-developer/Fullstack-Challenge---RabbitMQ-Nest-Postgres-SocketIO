@@ -1,4 +1,5 @@
 import {
+    ForbiddenException,
     Inject,
     Injectable,
     NotFoundException,
@@ -9,8 +10,9 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Task } from './entities/task.entity';
 import { TaskLog } from './entities/task-log.entity';
 import { RelUserTask } from './entities/rel-user-task.entity';
-import { AddLogDto, CreateTaskDto, FindAllFilters, ResponseDto, TASK_PATTERNS, TaskPriority, TaskStatus, UpdateTaskDto, WS_NOTIFICATIONS } from '@repo/types';
+import { AddLogDto, CreateTaskDto, FindAllFilters, ResponseDto, TASK_PATTERNS, TaskPriority, TaskStatus, UpdateTaskDto, UpdateTaskWrapper, WS_NOTIFICATIONS } from '@repo/types';
 import { NotificationsService } from '../notifications/notifications.service';
+import { filter } from 'rxjs';
 
 
 
@@ -32,10 +34,10 @@ export class TasksService {
         const task = this.taskRepository.create({
             title: createTaskDto.title,
             description: createTaskDto.description,
-            deadline: createTaskDto.prazo,
-            priority: createTaskDto.priority || TaskPriority.MEDIUM,
+            deadline: createTaskDto.deadline,
             status: TaskStatus.TODO,
-            userId: createTaskDto.creatorId,
+            createdBy: createTaskDto.createdBy,
+            priority: createTaskDto.priority ?? TaskPriority.MEDIUM as any,
         });
 
         const savedTask = await this.taskRepository.save(task);
@@ -52,7 +54,7 @@ export class TasksService {
 
         this.taskClient.emit(TASK_PATTERNS.ADD_TASK_LOG, {
             taskId: savedTask.id,
-            userId: savedTask.userId,
+            userId: savedTask.createdBy,
             change: `Tarefa criada: ${savedTask.title}, data: ${JSON.stringify(savedTask)}`,
         });
 
@@ -60,17 +62,18 @@ export class TasksService {
             message: `Voce foi adicionado a uma nova tarefa: ${savedTask.title}`,
             title: 'Nova tarefa',
             type: 'INFO',
-            userIds: createTaskDto.userIds.map(id => id.toString()),
-            data: { url: `/tasks/${savedTask.id}` },
+            createdBy: savedTask.createdBy,
+            userIds: createTaskDto.userIds?.map(id => id.toString()) ?? [],
+            data: { id: savedTask.id },
             event: WS_NOTIFICATIONS.taskCreated,
         });
 
         return { message: 'Tarefa criada com sucesso', data: savedTask };
     }
 
-    async update(updateTaskDto: UpdateTaskDto) {
+    async update(updateTaskDto: UpdateTaskWrapper) {
         const task = await this.taskRepository.findOne({
-            where: { id: updateTaskDto.id },
+            where: { id: updateTaskDto.taskId },
             relations: [ 'userTasks' ],
         });
 
@@ -78,34 +81,40 @@ export class TasksService {
             throw new NotFoundException('A tarefa nao existe.');
         }
 
-        task.title = updateTaskDto.title ?? task.title;
-        task.description = updateTaskDto.description ?? task.description;
-        task.deadline = updateTaskDto.deadline ?? task.deadline;
-        task.priority = updateTaskDto.priority ?? task.priority;
-        task.status = updateTaskDto.status ?? task.status;
+        if(task.createdBy !== updateTaskDto.updatedBy) {
+            throw new ForbiddenException('Voce nao tem permissao para atualizar esta tarefa.');
+        }
+
+        task.title = updateTaskDto.task.title ?? task.title;
+        task.description = updateTaskDto.task.description ?? task.description;
+        task.deadline = updateTaskDto.task.deadline ?? task.deadline;
+        task.priority = updateTaskDto.task.priority ?? task.priority as any;
+        task.status = updateTaskDto.task.status ?? task.status as any;
         let usersToAdd: number[] = [];
         let usersToRemove: number[] = [];
 
-        if(updateTaskDto.userIds !== undefined) {
+        if(updateTaskDto.task.userIds !== undefined) {
             const currentUsers = task.userTasks.map(ut => ut.userId);
-            const incomingUsers = updateTaskDto.userIds;
+            const incomingUsers = updateTaskDto.task.userIds;
 
             usersToAdd = incomingUsers.filter(id => !currentUsers.includes(id));
             usersToRemove = currentUsers.filter(id => !incomingUsers.includes(id));
 
             if(usersToRemove.length > 0) {
-                await this.relUserTaskRepository.delete({
-                    taskId: task.id,
-                    userId: In(usersToRemove),
-                })
+                const usersRelToRemove = task.userTasks.filter(ut => usersToRemove.includes(ut.userId));
+                usersRelToRemove.forEach(async (ut) => {
+                    await this.relUserTaskRepository.remove(ut);
+                });
+                task.userTasks = task.userTasks.filter(ut => !usersToRemove.includes(ut.userId));                
             }
 
-            if(usersToAdd.length > 0) {
-                const newUserTask =  usersToAdd.map(userId => this.relUserTaskRepository.create({
+            if(usersToAdd.length > 0) {                
+                const newUserTasks =  usersToAdd.map(userId => this.relUserTaskRepository.create({
                     taskId: task.id,
                     userId: userId,
                 }));
-                await this.relUserTaskRepository.save(newUserTask);
+                await this.relUserTaskRepository.save(newUserTasks);
+                task.userTasks = [...task.userTasks, ...newUserTasks];
             }
 
         }
@@ -113,40 +122,38 @@ export class TasksService {
         const updatedTask = await this.taskRepository.save(task);
 
         const changes = {
-            title: updateTaskDto.title !== undefined ? `Título: ${updateTaskDto.title}` : null,
-            description: updateTaskDto.description !== undefined ? `Descrição: ${updateTaskDto.description}` : null,
-            deadline: updateTaskDto.deadline !== undefined ? `Prazo: ${updateTaskDto.deadline}` : null,
-            priority: updateTaskDto.priority !== undefined ? `Prioridade: ${updateTaskDto.priority}` : null,
-            status: updateTaskDto.status !== undefined ? `Status: ${updateTaskDto.status}` : null,
+            title: updateTaskDto.task.title !== undefined ? `Título: ${updateTaskDto.task.title}` : null,
+            description: updateTaskDto.task.description !== undefined ? `Descrição: ${updateTaskDto.task.description}` : null,
+            deadline: updateTaskDto.task.deadline !== undefined ? `Prazo: ${updateTaskDto.task.deadline}` : null,
+            priority: updateTaskDto.task.priority !== undefined ? `Prioridade: ${updateTaskDto.task.priority}` : null,
+            status: updateTaskDto.task.status !== undefined ? `Status: ${updateTaskDto.task .status}` : null,
             users: usersToAdd.length > 0 || usersToRemove.length > 0 ? `Usuários Add/Remove: ${usersToAdd.join(', ')} ${usersToRemove.length > 0 ? `- ${usersToRemove.join(', ')}` : ''}` : null,
         }
 
         this.taskClient.emit(TASK_PATTERNS.ADD_TASK_LOG, {
             taskId: updatedTask.id,
-            userId: updatedTask.userId,
+            userId: updatedTask.createdBy,
             change: `Tarefa atualizada: ${updatedTask.title}, data: ${JSON.stringify(changes)}`,
         });
 
         this.notificationsService.handleNotification({
             message: `Uma tarefa que voce esta participando foi atualizada: ${updatedTask.title}`,
-            data: { url: `/tasks/${updatedTask.id}` },
+            data: { id: updatedTask.id },
             title: 'Tarefa atualizada',
+            createdBy: updatedTask.createdBy,
             type: 'INFO',
             userIds: usersToAdd.map(id => id.toString()),
             event: WS_NOTIFICATIONS.taskUpdated,
         });
 
-        return { message: 'Tarefa atualizada com sucesso' };
+        return { message: 'Tarefa atualizada com sucesso', data: task };
     }
 
     async findOne(id: number) {
         const task = await this.taskRepository.findOne({
             where: { id },
             relations: [
-                'userTasks',
-                'userTasks.user',
-                'comments',
-                'auditLogs',
+                'userTasks'
             ],
         });
 
@@ -157,50 +164,34 @@ export class TasksService {
         return task;
     }
 
-    async findAll(filters: FindAllFilters = {}) {
-        if (filters.userId) {
-            const relUserTasks = await this.relUserTaskRepository.find({
-                where: { userId: filters.userId },
-                relations: [
-                    'task',
-                    'task.userTasks',
-                    'task.userTasks.user',
-                    'task.comments',
-                    'task.auditLogs',
-                ],
-            });
+    async findAll(filters: FindAllFilters = { page: 1, limit: 10 }) {
+        const page = filters.page ? Number(filters.page) : 1;
+        const limit = filters.limit ? Number(filters.limit) : 10;
+        const skip = (page - 1) * limit;
 
-            let tasks = relUserTasks.map((rel) => rel.task);
+        const queryBuilder = this.taskRepository.createQueryBuilder('tasks');
+        queryBuilder.orderBy('tasks.createdAt', 'DESC');
+        queryBuilder.skip(skip);
+        queryBuilder.take(limit);
 
-            if (filters.status) {
-                tasks = tasks.filter((task) => task.status === filters.status);
+        filters.userIds && filters.userIds.length && queryBuilder.andWhere('tasks.createdBy IN (:...userIds)', { userIds: filters.userIds});
+        filters.status && queryBuilder.andWhere('tasks.status = :status', { status: filters.status });
+        filters.priority && queryBuilder.andWhere('tasks.priority = :priority', { priority: filters.priority });
+        filters.title && queryBuilder.andWhere('tasks.title LIKE :title', { title: `%${filters.title}%` });
+
+        const [tasks, total] = await queryBuilder.getManyAndCount();
+
+        return {
+            message: 'Lista de tarefas encontrada com sucesso',
+            data: tasks,
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
             }
-            if (filters.priority) {
-                tasks = tasks.filter(
-                    (task) => task.priority === filters.priority,
-                );
-            }
-
-            return tasks;
         }
 
-        const where: any = {};
-        if (filters.status) {
-            where.status = filters.status;
-        }
-        if (filters.priority) {
-            where.priority = filters.priority;
-        }
-
-        return await this.taskRepository.find({
-            where,
-            relations: [
-                'userTasks',
-                'userTasks.user',
-                'comments',
-                'auditLogs',
-            ],
-        });
     }
 
     async addLog(logDto: AddLogDto) {

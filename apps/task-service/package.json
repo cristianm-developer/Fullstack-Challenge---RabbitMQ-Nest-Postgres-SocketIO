@@ -31,13 +31,17 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.0",
     "@repo/microservice-health-module": "*",
+    "@repo/microservice-interceptors": "*",
     "@repo/types": "*",
     "amqp-connection-manager": "^5.0.0",
     "amqplib": "^0.10.9",
     "dotenv": "^16.0.3",
+    "pino-http": "^10.5.0",
+    "pino-nestjs": "^0.1.3",
+    "pino-pretty": "^11.3.0",
     "reflect-metadata": "^0.2.2",
-    "@repo/microservice-interceptors": "*",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "@repo/typescript-config": "*"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

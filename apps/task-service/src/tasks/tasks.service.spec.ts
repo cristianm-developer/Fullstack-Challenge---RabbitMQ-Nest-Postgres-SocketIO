@@ -19,6 +19,14 @@ const mockTaskRepository = {
     findOne: jest.fn(),
     findOneBy: jest.fn(),
     findOneByOrFail: jest.fn(),
+    createQueryBuilder: jest.fn().mockReturnValue({
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+    }),
+    getManyAndCount: jest.fn(),
 };
 
 const mockTaskLogRepository = {
@@ -52,6 +60,8 @@ describe('TasksService', () => {
         prazo: new Date('2024-12-31'),
         priority: TaskPriority.MEDIUM,
         status: TaskStatus.TODO,
+        createdBy: 1,
+        userTasks: [],
         createdAt: new Date(),
         updatedAt: new Date(),
     };
@@ -125,10 +135,10 @@ describe('TasksService', () => {
             const createTaskDto: CreateTaskDto = {
                 title: 'New Task',
                 description: 'Task Description',
-                prazo: new Date('2024-12-31'),
+                deadline: new Date('2024-12-31'),
                 priority: TaskPriority.HIGH,
                 userIds: [1],
-                creatorId: 1,
+                createdBy: 1,
             };
 
             mockTaskRepository.create.mockReturnValue({
@@ -210,31 +220,44 @@ describe('TasksService', () => {
 
         it('should update a task successfully and return success message', async () => {
             const updateTaskDto = {
-                id: 1,
+                taskId: 1,
+                updatedBy: 1,
+                task: {
+                    title: 'Updated Task',
+                    description: 'Updated Description',
+                    status: TaskStatus.IN_PROGRESS,
+                },
+            };
+
+            const updatedTask = {
+                ...mockTask,
                 title: 'Updated Task',
                 description: 'Updated Description',
                 status: TaskStatus.IN_PROGRESS,
             };
 
             mockTaskRepository.findOne.mockResolvedValue(mockTask);
-            mockTaskRepository.save.mockResolvedValue({
-                ...mockTask,
-                ...updateTaskDto,
-                updatedAt: new Date(),
-            });
+            mockTaskRepository.save.mockResolvedValue(updatedTask);
 
             const result = await service.update(updateTaskDto);
 
-            expect(taskRepository.findOne).toHaveBeenCalled();
+            expect(taskRepository.findOne).toHaveBeenCalledWith({
+                where: { id: updateTaskDto.taskId },
+                relations: ['userTasks'],
+            });
             expect(taskRepository.save).toHaveBeenCalled();
             expect(result).toBeDefined();
             expect(result.message).toBe('Tarefa atualizada com sucesso');
+            expect(result.data.title).toBe('Updated Task');
         });
 
         it('should throw an error with portuguese message if task does not exist', async () => {
             const updateTaskDto = {
-                id: 999,
-                title: 'Updated Task',
+                taskId: 999,
+                updatedBy: 1,
+                task: {
+                    title: 'Updated Task',
+                },
             };
 
             mockTaskRepository.findOne.mockResolvedValue(null);
@@ -249,20 +272,25 @@ describe('TasksService', () => {
 
         it('should update only provided fields and return success message', async () => {
             const updateTaskDto = {
-                id: 1,
+                taskId: 1,
+                updatedBy: 1,
+                task: {
+                    status: TaskStatus.DONE,
+                },
+            };
+
+            const updatedTask = {
+                ...mockTask,
                 status: TaskStatus.DONE,
             };
 
             mockTaskRepository.findOne.mockResolvedValue(mockTask);
-            mockTaskRepository.save.mockResolvedValue({
-                ...mockTask,
-                status: TaskStatus.DONE,
-                updatedAt: new Date(),
-            });
+            mockTaskRepository.save.mockResolvedValue(updatedTask);
 
             const result = await service.update(updateTaskDto);
 
             expect(result.message).toBe('Tarefa atualizada com sucesso');
+            expect(result.data.status).toBe(TaskStatus.DONE);
         });
     });
 
@@ -274,7 +302,7 @@ describe('TasksService', () => {
 
             expect(taskRepository.findOne).toHaveBeenCalledWith({
                 where: { id: 1 },
-                relations: ['userTasks', 'userTasks.user', 'comments', 'auditLogs'],
+                relations: ['userTasks'],
             });
             expect(result).toBeDefined();
             expect(result.id).toBe(1);
@@ -293,43 +321,57 @@ describe('TasksService', () => {
     });
 
     describe('findAll', () => {
+        let mockQueryBuilder: any;
+
+        beforeEach(() => {
+            mockQueryBuilder = {
+                orderBy: jest.fn().mockReturnThis(),
+                skip: jest.fn().mockReturnThis(),
+                take: jest.fn().mockReturnThis(),
+                where: jest.fn().mockReturnThis(),
+                andWhere: jest.fn().mockReturnThis(),
+                getManyAndCount: jest.fn(),
+            };
+            mockTaskRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+        });
+
         it('should find all tasks without filters', async () => {
             const tasks = [mockTask, { ...mockTask, id: 2 }];
-            mockTaskRepository.find.mockResolvedValue(tasks);
+            mockQueryBuilder.getManyAndCount.mockResolvedValue([tasks, 2]);
 
-            const result = await service.findAll({});
+            const result = await service.findAll({ page: 1, limit: 10 });
 
-            expect(taskRepository.find).toHaveBeenCalled();
+            expect(taskRepository.createQueryBuilder).toHaveBeenCalledWith('tasks');
+            expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('tasks.createdAt', 'DESC');
+            expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0);
+            expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
             expect(result).toBeDefined();
-            expect(result.length).toBe(2);
+            expect(result.data.length).toBe(2);
+            expect(result.meta.total).toBe(2);
         });
 
         it('should find tasks filtered by status', async () => {
             const tasks = [{ ...mockTask, status: TaskStatus.TODO }];
-            mockTaskRepository.find.mockResolvedValue(tasks);
+            mockQueryBuilder.getManyAndCount.mockResolvedValue([tasks, 1]);
 
-            const result = await service.findAll({ status: TaskStatus.TODO });
+            const result = await service.findAll({ status: TaskStatus.TODO, page: 1, limit: 10 });
 
-            expect(taskRepository.find).toHaveBeenCalledWith({
-                where: { status: TaskStatus.TODO },
-                relations: ['userTasks', 'userTasks.user', 'comments', 'auditLogs'],
-            });
+            expect(taskRepository.createQueryBuilder).toHaveBeenCalledWith('tasks');
+            expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('tasks.status = :status', { status: TaskStatus.TODO });
             expect(result).toBeDefined();
-            expect(result[0]?.status).toBe(TaskStatus.TODO);
+            expect(result.data[0]?.status).toBe(TaskStatus.TODO);
         });
 
         it('should find tasks filtered by priority', async () => {
             const tasks = [{ ...mockTask, priority: TaskPriority.HIGH }];
-            mockTaskRepository.find.mockResolvedValue(tasks);
+            mockQueryBuilder.getManyAndCount.mockResolvedValue([tasks, 1]);
 
-            const result = await service.findAll({ priority: TaskPriority.HIGH });
+            const result = await service.findAll({ priority: TaskPriority.HIGH, page: 1, limit: 10 });
 
-            expect(taskRepository.find).toHaveBeenCalledWith({
-                where: { priority: TaskPriority.HIGH },
-                relations: ['userTasks', 'userTasks.user', 'comments', 'auditLogs'],
-            });
+            expect(taskRepository.createQueryBuilder).toHaveBeenCalledWith('tasks');
+            expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('tasks.priority = :priority', { priority: TaskPriority.HIGH });
             expect(result).toBeDefined();
-            expect(result[0]?.priority).toBe(TaskPriority.HIGH);
+            expect(result.data[0]?.priority).toBe(TaskPriority.HIGH);
         });
 
         it('should find tasks filtered by status and priority', async () => {
@@ -340,38 +382,33 @@ describe('TasksService', () => {
                     priority: TaskPriority.URGENT,
                 },
             ];
-            mockTaskRepository.find.mockResolvedValue(tasks);
+            mockQueryBuilder.getManyAndCount.mockResolvedValue([tasks, 1]);
 
             const result = await service.findAll({
                 status: TaskStatus.IN_PROGRESS,
                 priority: TaskPriority.URGENT,
+                page: 1,
+                limit: 10,
             });
 
-            expect(taskRepository.find).toHaveBeenCalledWith({
-                where: {
-                    status: TaskStatus.IN_PROGRESS,
-                    priority: TaskPriority.URGENT,
-                },
-                relations: ['userTasks', 'userTasks.user', 'comments', 'auditLogs'],
-            });
+            expect(taskRepository.createQueryBuilder).toHaveBeenCalledWith('tasks');
+            expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('tasks.status = :status', { status: TaskStatus.IN_PROGRESS });
+            expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('tasks.priority = :priority', { priority: TaskPriority.URGENT });
             expect(result).toBeDefined();
-            expect(result[0]?.status).toBe(TaskStatus.IN_PROGRESS);
-            expect(result[0]?.priority).toBe(TaskPriority.URGENT);
+            expect(result.data[0]?.status).toBe(TaskStatus.IN_PROGRESS);
+            expect(result.data[0]?.priority).toBe(TaskPriority.URGENT);
         });
 
         it('should find tasks filtered by userId', async () => {
             const tasks = [mockTask];
-            mockRelUserTaskRepository.find.mockResolvedValue([
-                { taskId: 1, userId: 1, task: mockTask },
-            ]);
+            mockQueryBuilder.getManyAndCount.mockResolvedValue([tasks, 1]);
 
-            const result = await service.findAll({ userId: 1 });
+            const result = await service.findAll({ userIds: [1], page: 1, limit: 10 });
 
-            expect(relUserTaskRepository.find).toHaveBeenCalledWith({
-                where: { userId: 1 },
-                relations: ['task', 'task.userTasks', 'task.userTasks.user', 'task.comments', 'task.auditLogs'],
-            });
+            expect(taskRepository.createQueryBuilder).toHaveBeenCalledWith('tasks');
+            expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('tasks.createdBy IN (:...userIds)', { userIds: [1] });
             expect(result).toBeDefined();
+            expect(result.data.length).toBe(1);
         });
     });
 

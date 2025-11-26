@@ -5,7 +5,8 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from './auth.guard';
-import { InjectPinoLogger, PinoLogger } from 'pino-nestjs';
+import { PinoLogger } from 'pino-nestjs';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @ApiTags('Autenticação')
 @Controller('auth')
@@ -20,7 +21,7 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Login realizado com sucesso' })
     @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
     async login(@Body() loginUserDto: LoginUserDto) {
-        return await this.authService.login(loginUserDto);
+        return this.authService.login(loginUserDto);
     }
 
     @Post('register')
@@ -28,8 +29,6 @@ export class AuthController {
     @ApiResponse({ status: 201, description: 'Usuário registrado com sucesso' })
     @ApiResponse({ status: 400, description: 'Dados inválidos ou usuário já existe' })
     async register(@Body() registerUserDto: RegisterUserDto) {
-
-        this.logger.info('Register request received', { registerUserDto });
         return  this.authService.register(registerUserDto);
     }
 
@@ -40,7 +39,7 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Lista de usuários retornada com sucesso' })
     @ApiResponse({ status: 401, description: 'Não autorizado' })
     async findAll() {
-        return await this.authService.findAll();
+        return this.authService.findAll();
     }
 
     @UseGuards(AuthGuard)
@@ -52,6 +51,14 @@ export class AuthController {
     @ApiResponse({ status: 401, description: 'Não autorizado' })
     @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
     async update(@Body() updateUserDto: UpdateUserDto) {
-        return await this.authService.update(updateUserDto);
+        return this.authService.update(updateUserDto);
+    }
+
+    @Post('refresh-token')
+    @ApiOperation({ summary: 'Atualizar token de acesso', description: 'Atualiza o token de acesso usando um token de refresh' })
+    @ApiResponse({ status: 200, description: 'Token de acesso atualizado com sucesso' })
+    @ApiResponse({ status: 401, description: 'Token de refresh inválido' })
+    async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+        return this.authService.refreshToken(refreshTokenDto);
     }
 }

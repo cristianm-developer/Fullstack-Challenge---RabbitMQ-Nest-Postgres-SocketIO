@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { LoginUserDto, RegisterUserDto, UpdateUserDto } from '@repo/types';
+import { LoginUserDto, RefreshTokenDto, RegisterUserDto, UpdateUserDto } from '@repo/types';
 import { AuthGuard } from './auth.guard';
+import { LoggerModule } from 'pino-nestjs';
 
 const mockAuthService = {
   login: jest.fn(),
@@ -21,6 +22,9 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        LoggerModule.forRoot()        
+      ],
       controllers: [AuthController],
       providers: [
         {
@@ -134,6 +138,18 @@ describe('AuthController', () => {
 
       expect(service.update).toHaveBeenCalledWith(updateDto);
       expect(result).toEqual(expectedResponse);
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should be defined', () => {
+      expect(controller.refreshToken).toBeDefined();
+    });
+
+    it('should call authService.refreshToken with correct payload', async () => {
+      const refreshTokenDto: RefreshTokenDto = {
+        refreshToken: 'refreshToken123',
+      };
     });
   });
 });

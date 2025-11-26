@@ -1,3 +1,4 @@
+import { PaginationDto } from "./pagination";
 import { TaskPriority, TaskStatus } from "./tasks.enum";
 
 export class TaskDto {  
@@ -11,16 +12,7 @@ export class TaskDto {
     createdAt!: Date;
 }
 export class CreateTaskDto {
-    title!: string;
-    description?: string;
-    prazo?: Date;
-    priority?: TaskPriority;
-    userIds!: number[];
-    creatorId!: number;
-}
-
-export class UpdateTaskDto {
-    id!: number;
+    createdBy?: number;
     title?: string;
     description?: string;
     deadline?: Date;
@@ -29,11 +21,27 @@ export class UpdateTaskDto {
     userIds?: number[];
 }
 
-export class FindAllFilters {
+export class UpdateTaskWrapper {
+    task!: UpdateTaskDto;
+    updatedBy!: number;
+    taskId!: number;
+}
+
+export class UpdateTaskDto {
+    createdBy?: number;
+    title?: string;
+    description?: string;
+    deadline?: Date;
+    priority?: TaskPriority;
+    status?: TaskStatus;
+    userIds?: number[];
+}
+
+export class FindAllFilters extends PaginationDto {
     title?: string;
     status?: TaskStatus;
     priority?: TaskPriority;
-    userId?: number;
+    userIds?: number[];
 }
 
 export class AddLogDto {
@@ -41,3 +49,4 @@ export class AddLogDto {
     userId!: number;
     change!: string;
 }
+

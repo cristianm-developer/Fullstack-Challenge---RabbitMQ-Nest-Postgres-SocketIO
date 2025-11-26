@@ -8,12 +8,21 @@ import { Task } from '../tasks/entities/task.entity';
 import { CreateCommentDto } from '@repo/types';
 import { NotificationsService } from '../notifications/notifications.service';
 
+const mockQueryBuilder = {
+    orderBy: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    getManyAndCount: jest.fn(),
+};
+
 const mockCommentRepository = {
     save: jest.fn(),
     create: jest.fn(),
     find: jest.fn(),
     findOne: jest.fn(),
     findOneBy: jest.fn(),
+    createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
 };
 
 const mockNotificationsService = {
@@ -38,6 +47,10 @@ describe('CommentsService', () => {
         priority: 'MEDIUM',
         status: 'TODO',
         userId: 1,
+        userTasks: [
+            { userId: 1, taskId: 1 },
+            { userId: 2, taskId: 1 },
+        ],
         createdAt: new Date(),
         updatedAt: new Date(),
     };
@@ -89,6 +102,10 @@ describe('CommentsService', () => {
         taskRepository = module.get<Repository<Task>>(getRepositoryToken(Task));
 
         jest.clearAllMocks();
+        mockQueryBuilder.orderBy.mockReturnThis();
+        mockQueryBuilder.skip.mockReturnThis();
+        mockQueryBuilder.take.mockReturnThis();
+        mockQueryBuilder.where.mockReturnThis();
     });
 
     it('should be defined', () => {
@@ -122,6 +139,7 @@ describe('CommentsService', () => {
 
             expect(taskRepository.findOne).toHaveBeenCalledWith({
                 where: { id: createCommentDto.taskId },
+                relations: ['userTasks'],
             });
             expect(commentRepository.create).toHaveBeenCalled();
             expect(commentRepository.save).toHaveBeenCalled();
@@ -155,50 +173,68 @@ describe('CommentsService', () => {
         });
 
         it('should find all comments for a specific task and return success message', async () => {
-            const taskId = 1;
+            const filters = {
+                taskId: 1,
+                page: 1,
+                limit: 10,
+            };
             const comments = [mockComment, { ...mockComment, id: 2 }];
+            const total = 2;
 
-            mockTaskRepository.findOne.mockResolvedValue(mockTask);
-            mockCommentRepository.find.mockResolvedValue(comments);
+            mockQueryBuilder.getManyAndCount.mockResolvedValue([comments, total]);
 
-            const result = await service.findAll(taskId);
+            const result = await service.findAll(filters);
 
-            expect(taskRepository.findOne).toHaveBeenCalledWith({
-                where: { id: taskId },
-            });
-            expect(commentRepository.find).toHaveBeenCalledWith({
-                where: { taskId },
-                relations: ['task'],
-            });
+            expect(commentRepository.createQueryBuilder).toHaveBeenCalledWith('comments');
+            expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('comments.createdAt', 'DESC');
+            expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0);
+            expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
+            expect(mockQueryBuilder.where).toHaveBeenCalledWith('comments.taskId = :taskId', { taskId: filters.taskId });
             expect(result).toBeDefined();
             expect(result.message).toBe('Comentários carregados com sucesso');
             expect(result.data).toBeDefined();
             expect(result.data?.length).toBe(2);
+            expect(result.meta).toBeDefined();
+            expect(result.meta?.total).toBe(2);
+            expect(result.meta?.limit).toBe(10);
+            expect(result.meta?.totalPages).toBe(1);
+            expect(result.meta?.page).toBe(1);
         });
 
         it('should return empty array if task has no comments', async () => {
-            const taskId = 1;
+            const filters = {
+                taskId: 1,
+                page: 1,
+                limit: 10,
+            };
 
-            mockTaskRepository.findOne.mockResolvedValue(mockTask);
-            mockCommentRepository.find.mockResolvedValue([]);
+            mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
-            const result = await service.findAll(taskId);
+            const result = await service.findAll(filters);
 
             expect(result.message).toBe('Comentários carregados com sucesso');
             expect(result.data).toEqual([]);
+            expect(result.meta?.total).toBe(0);
+            expect(result.meta?.limit).toBe(10);
         });
 
-        it('should throw an error with portuguese message if task does not exist', async () => {
-            const taskId = 999;
+        it('should handle pagination correctly', async () => {
+            const filters = {
+                taskId: 1,
+                page: 2,
+                limit: 5,
+            };
+            const comments = [mockComment];
+            const total = 6;
 
-            mockTaskRepository.findOne.mockResolvedValue(null);
+            mockQueryBuilder.getManyAndCount.mockResolvedValue([comments, total]);
 
-            await expect(service.findAll(taskId)).rejects.toThrow(
-                NotFoundException,
-            );
-            await expect(service.findAll(taskId)).rejects.toThrow(
-                'A tarefa nao existe.',
-            );
+            const result = await service.findAll(filters);
+
+            expect(mockQueryBuilder.skip).toHaveBeenCalledWith(5);
+            expect(mockQueryBuilder.take).toHaveBeenCalledWith(5);
+            expect(result.meta?.totalPages).toBe(2);
+            expect(result.meta?.page).toBe(2);
         });
     });
 });

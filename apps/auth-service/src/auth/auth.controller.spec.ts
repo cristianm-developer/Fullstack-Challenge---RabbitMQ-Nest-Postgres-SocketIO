@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { MicroserviceInterceptorModule } from '@repo/microservice-interceptors';
+import { LoggerModule } from 'pino-nestjs';
 
 const mockAuthService = {
   login: jest.fn(),
@@ -16,6 +18,10 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        LoggerModule.forRoot(),
+        MicroserviceInterceptorModule.forRoot('auth-service'),
+      ],
       controllers: [AuthController],
       providers: [
         {
@@ -62,6 +68,16 @@ describe('AuthController', () => {
       }]);
       const result = await authService.findAll();
       expect(result).toBeDefined();
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should call the auth service refreshToken method and return a JWT if the refresh token is valid', async () => {
+      mockAuthService.refreshToken.mockResolvedValue({
+        accessToken: 'test',
+        refreshToken: 'test',
+        expiresIn: '15m',
+      });
     });
   });
 });

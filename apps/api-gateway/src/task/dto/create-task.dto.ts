@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min, ArrayMinSize } from 'class-validator';
-import { TaskPriority } from '@repo/types';
+import { TaskPriority, TaskStatus } from '@repo/types';
 
 export class CreateTaskDto {
     @ApiProperty({
@@ -41,9 +41,8 @@ export class CreateTaskDto {
         required: false,
         default: TaskPriority.MEDIUM,
     })
-    @IsOptional()
     @IsEnum(TaskPriority, { message: 'A prioridade deve ser LOW, MEDIUM, HIGH ou URGENT' })
-    priority?: TaskPriority;
+    priority!: TaskPriority;
 
     @ApiProperty({
         description: 'Lista de IDs dos usuários atribuídos à tarefa',
@@ -57,5 +56,25 @@ export class CreateTaskDto {
     @IsInt({ each: true, message: 'Cada ID de usuário deve ser um número inteiro' })
     @Min(1, { each: true, message: 'Cada ID de usuário deve ser maior que zero' })
     userIds!: number[];
+
+    @ApiProperty({
+        description: 'Prazo da tarefa',
+        example: '2024-12-31',
+        required: false,
+        type: String,
+    })
+    @IsDateString({}, { message: 'O prazo deve ser uma data válida (formato ISO 8601)' })
+    deadline?: Date;
+
+    @ApiProperty({
+        description: 'Status da tarefa',
+        example: 'TODO',
+        enum: ['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE'],
+        required: false,
+        default: 'TODO',
+        type: String,
+    })
+    @IsEnum(TaskStatus, { message: 'O status deve ser TODO, IN_PROGRESS, REVIEW ou DONE' })
+    status!: TaskStatus;
 }
 
