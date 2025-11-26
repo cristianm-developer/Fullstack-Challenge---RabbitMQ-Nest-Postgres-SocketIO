@@ -79,13 +79,13 @@ graph TD
   end
 
   Web -->|HTTP| APIGW
-  APIGW -->|HTTP/gRPC| Auth
-  APIGW -->|HTTP/gRPC| Task
-  APIGW -->|HTTP/gRPC| Notification
+  APIGW -->|HTTP/RMQ| Auth
+  APIGW -->|HTTP/RMQ| Task
+  APIGW -->|HTTP/RMQ| Notification
 
   Auth ---|DB| Postgres
   Task ---|DB| Postgres
-  Notification ---|DB| Postgres
+  Notification 
 
   Auth <--> RabbitMQ
   Task <--> RabbitMQ
